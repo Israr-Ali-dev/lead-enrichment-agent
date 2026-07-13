@@ -18,6 +18,9 @@ from langgraph.graph import StateGraph, START, END
 from src.state import LeadState, Status
 from src.tools.enrichment import enrich_company
 from src.guardrails.validator import validate
+from src.logging_config import get_logger, log_transition
+
+logger = get_logger("lead_enrichment.orchestrator")
 
 
 def enrich_node(state: LeadState) -> LeadState:
@@ -30,27 +33,41 @@ def enrich_node(state: LeadState) -> LeadState:
             Status.ENRICHING,
             f"enrichment call returned {len(result.get('candidates', []))} candidate(s)",
         )
+    log_transition(logger, state)
     return state
 
 
 def validate_node(state: LeadState) -> LeadState:
     state.transition(Status.VALIDATING, "running guardrail checks")
-    return validate(state)
+    log_transition(logger, state)
+    state = validate(state)
+    log_transition(logger, state)
+    return state
+
+
+def _finalize(state: LeadState) -> LeadState:
+    logger.info(
+        "pipeline_finished",
+        extra={
+            "record_id": state.record_id,
+            "status": state.status.value,
+            "confidence_score": state.confidence_score,
+            "conflicts": state.conflicts,
+        },
+    )
+    return state
 
 
 def accepted_node(state: LeadState) -> LeadState:
-    state.transition(Status.ACCEPTED, "reached accepted terminal state")
-    return state
+    return _finalize(state)
 
 
 def needs_review_node(state: LeadState) -> LeadState:
-    state.transition(Status.NEEDS_REVIEW, "reached needs_review terminal state")
-    return state
+    return _finalize(state)
 
 
 def rejected_node(state: LeadState) -> LeadState:
-    state.transition(Status.REJECTED, "reached rejected terminal state")
-    return state
+    return _finalize(state)
 
 
 def route_after_validation(state: LeadState) -> str:
