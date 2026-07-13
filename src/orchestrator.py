@@ -6,10 +6,10 @@ Graph shape:
                                             -> needs_review -> END
                                             -> rejected    -> END
 
-`enrich` and `validate` are placeholders in this commit -- they wire up the
-full graph shape and state transitions now, and get their real logic in
-later commits (tools/enrichment.py and guardrails/validator.py
-respectively) without changing the control flow itself.
+`enrich` calls the real Clearbit Autocomplete lookup (src/tools/enrichment.py).
+`validate` is still a placeholder in this commit -- it gets real guardrail
+logic in the next commit (src/guardrails/validator.py) without changing the
+control flow itself.
 """
 
 from __future__ import annotations
@@ -17,10 +17,19 @@ from __future__ import annotations
 from langgraph.graph import StateGraph, START, END
 
 from src.state import LeadState, Status
+from src.tools.enrichment import enrich_company
 
 
 def enrich_node(state: LeadState) -> LeadState:
-    state.transition(Status.ENRICHING, "stub: enrichment tool not yet wired in")
+    result = enrich_company(state.name, state.domain)
+    state.source_data = result
+    if "error" in result:
+        state.transition(Status.ENRICHING, f"enrichment call failed: {result['error']}")
+    else:
+        state.transition(
+            Status.ENRICHING,
+            f"enrichment call returned {len(result.get('candidates', []))} candidate(s)",
+        )
     return state
 
 
