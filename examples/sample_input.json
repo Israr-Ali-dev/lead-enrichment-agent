@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Shopify",
+    "domain": "shopify.com",
+    "raw_notes": "E-commerce platform, inbound from website contact form."
+  },
+  {
+    "name": "Notion",
+    "domain": null,
+    "raw_notes": null
+  },
+  {
+    "name": "Acme Corp",
+    "domain": "acme-corp.io",
+    "raw_notes": "Also seen listed under acme.com in an old sales deck -- confirm which is current before outreach."
+  },
+  {
+    "name": "asldkjasldkj123notarealcompany",
+    "domain": null,
+    "raw_notes": null
+  }
+]

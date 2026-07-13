@@ -118,3 +118,20 @@ def run_pipeline(raw_record: dict) -> LeadState:
     initial_state = LeadState(**raw_record)
     result = _compiled_graph.invoke(initial_state)
     return LeadState(**result)
+
+
+if __name__ == "__main__":
+    import json
+    import sys
+    from pathlib import Path
+
+    input_path = Path(sys.argv[1] if len(sys.argv) > 1 else "examples/sample_input.json")
+    records = json.loads(input_path.read_text())
+
+    for raw_record in records:
+        final_state = run_pipeline(raw_record)
+        print(
+            f"\n=== {raw_record['name']} -> {final_state.status.value} "
+            f"(confidence={final_state.confidence_score}, conflicts={final_state.conflicts}) ===",
+            file=sys.stderr,
+        )
