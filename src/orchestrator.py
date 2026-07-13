@@ -7,9 +7,8 @@ Graph shape:
                                             -> rejected    -> END
 
 `enrich` calls the real Clearbit Autocomplete lookup (src/tools/enrichment.py).
-`validate` is still a placeholder in this commit -- it gets real guardrail
-logic in the next commit (src/guardrails/validator.py) without changing the
-control flow itself.
+`validate` runs the guardrail checks (src/guardrails/validator.py), which
+sets the final status that the conditional edge below routes on.
 """
 
 from __future__ import annotations
@@ -18,6 +17,7 @@ from langgraph.graph import StateGraph, START, END
 
 from src.state import LeadState, Status
 from src.tools.enrichment import enrich_company
+from src.guardrails.validator import validate
 
 
 def enrich_node(state: LeadState) -> LeadState:
@@ -34,10 +34,8 @@ def enrich_node(state: LeadState) -> LeadState:
 
 
 def validate_node(state: LeadState) -> LeadState:
-    state.transition(Status.VALIDATING, "stub: validator not yet wired in")
-    # Placeholder routing decision until guardrails/validator.py lands.
-    state.status = Status.NEEDS_REVIEW
-    return state
+    state.transition(Status.VALIDATING, "running guardrail checks")
+    return validate(state)
 
 
 def accepted_node(state: LeadState) -> LeadState:
